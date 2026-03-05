@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="al-bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#141414"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+    <radialGradient id="al-iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ff88"/>
+      <stop offset="60%" stop-color="#00cc66"/>
+      <stop offset="100%" stop-color="#009944"/>
+    </radialGradient>
+    <filter id="al-glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="al-glow-lg">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="al-circle">
+      <circle cx="256" cy="256" r="240"/>
+    </clipPath>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="url(#al-bg)"/>
+  
+  <!-- Subtle grid pattern -->
+  <g opacity="0.06" clip-path="url(#al-circle)">
+    <line x1="128" y1="0" x2="128" y2="512" stroke="#00ff88" stroke-width="0.5"/>
+    <line x1="256" y1="0" x2="256" y2="512" stroke="#00ff88" stroke-width="0.5"/>
+    <line x1="384" y1="0" x2="384" y2="512" stroke="#00ff88" stroke-width="0.5"/>
+    <line x1="0" y1="128" x2="512" y2="128" stroke="#00ff88" stroke-width="0.5"/>
+    <line x1="0" y1="256" x2="512" y2="256" stroke="#00ff88" stroke-width="0.5"/>
+    <line x1="0" y1="384" x2="512" y2="384" stroke="#00ff88" stroke-width="0.5"/>
+  </g>
+  
+  <!-- Circuit traces radiating outward -->
+  <g filter="url(#al-glow)" opacity="0.7">
+    <!-- Top traces -->
+    <path d="M256 160 L256 80 L320 80" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="320" cy="80" r="4" fill="#00d4ff"/>
+    <path d="M290 170 L340 120 L400 120" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="400" cy="120" r="4" fill="#00d4ff"/>
+    <path d="M222 170 L172 120 L112 120" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="112" cy="120" r="4" fill="#00d4ff"/>
+    
+    <!-- Bottom traces -->
+    <path d="M256 352 L256 420 L192 420" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="192" cy="420" r="4" fill="#00d4ff"/>
+    <path d="M290 342 L340 392 L400 392" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="400" cy="392" r="4" fill="#00d4ff"/>
+    <path d="M222 342 L172 392 L112 392" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="112" cy="392" r="4" fill="#00d4ff"/>
+    
+    <!-- Side traces -->
+    <path d="M160 256 L80 256 L80 200" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="80" cy="200" r="4" fill="#00d4ff"/>
+    <path d="M352 256 L432 256 L432 312" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="432" cy="312" r="4" fill="#00d4ff"/>
+    
+    <!-- Diagonal traces -->
+    <path d="M176 196 L120 168 L68 168" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="68" cy="168" r="3" fill="#00d4ff"/>
+    <path d="M336 316 L392 344 L444 344" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="444" cy="344" r="3" fill="#00d4ff"/>
+  </g>
+  
+  <!-- Eye outer shape -->
+  <g filter="url(#al-glow-lg)">
+    <path d="M80 256 Q168 160 256 160 Q344 160 432 256 Q344 352 256 352 Q168 352 80 256Z" 
+          fill="none" stroke="#00ff88" stroke-width="3" opacity="0.9"/>
+  </g>
+  
+  <!-- Eye fill -->
+  <path d="M80 256 Q168 160 256 160 Q344 160 432 256 Q344 352 256 352 Q168 352 80 256Z" 
+        fill="#0a0a0a" opacity="0.8"/>
+  
+  <!-- Iris outer ring -->
+  <circle cx="256" cy="256" r="72" fill="none" stroke="#00ff88" stroke-width="2.5" opacity="0.6" filter="url(#al-glow)"/>
+  
+  <!-- Iris -->
+  <circle cx="256" cy="256" r="60" fill="url(#al-iris)" opacity="0.9" filter="url(#al-glow)"/>
+  
+  <!-- Iris texture lines -->
+  <g opacity="0.3">
+    <line x1="256" y1="200" x2="256" y2="312" stroke="#00ffaa" stroke-width="0.5"/>
+    <line x1="200" y1="256" x2="312" y2="256" stroke="#00ffaa" stroke-width="0.5"/>
+    <line x1="216" y1="216" x2="296" y2="296" stroke="#00ffaa" stroke-width="0.5"/>
+    <line x1="296" y1="216" x2="216" y2="296" stroke="#00ffaa" stroke-width="0.5"/>
+  </g>
+  
+  <!-- Pupil -->
+  <circle cx="256" cy="256" r="24" fill="#0a0a0a"/>
+  <circle cx="256" cy="256" r="20" fill="#0d1a0d"/>
+  
+  <!-- Highlight reflection -->
+  <circle cx="240" cy="240" r="8" fill="#ffffff" opacity="0.6"/>
+  <circle cx="272" cy="248" r="4" fill="#ffffff" opacity="0.3"/>
+  
+  <!-- Scanning line effect -->
+  <g opacity="0.15">
+    <rect x="80" y="254" width="352" height="2" fill="#00ff88"/>
+  </g>
+</svg>
