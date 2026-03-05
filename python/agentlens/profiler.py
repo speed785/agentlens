@@ -5,13 +5,11 @@ Core profiler: decorators and wrappers for instrumenting LLM calls and tool call
 from __future__ import annotations
 
 import functools
-import time
-import traceback
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 import threading
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -211,8 +209,8 @@ class Profiler:
             import asyncio
 
             if asyncio.iscoroutinefunction(fn):
-                return async_wrapper  # type: ignore[return-value]
-            return wrapper  # type: ignore[return-value]
+                return cast(F, async_wrapper)  # pyright: ignore[reportReturnType]
+            return cast(F, wrapper)  # pyright: ignore[reportReturnType]
 
         return decorator
 
@@ -278,8 +276,8 @@ class Profiler:
             import asyncio
 
             if asyncio.iscoroutinefunction(fn):
-                return async_wrapper  # type: ignore[return-value]
-            return wrapper  # type: ignore[return-value]
+                return cast(F, async_wrapper)  # pyright: ignore[reportReturnType]
+            return cast(F, wrapper)  # pyright: ignore[reportReturnType]
 
         return decorator
 

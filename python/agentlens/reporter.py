@@ -7,13 +7,13 @@ from __future__ import annotations
 import json
 import sys
 from datetime import datetime, timezone
-from typing import IO, List, Optional, TextIO
+from typing import IO, Any, Optional, TextIO
 
-from .profiler import CallType, ProfiledCall, Profiler
+from .profiler import CallType, Profiler
 
 
 # ANSI colour helpers (auto-disable when not a TTY)
-def _supports_color(stream: IO) -> bool:
+def _supports_color(stream: IO[Any]) -> bool:
     return hasattr(stream, "isatty") and stream.isatty()
 
 
@@ -204,7 +204,7 @@ class Reporter:
             json.dump(data, fh, indent=2, default=str)
         print(f"  Exported {len(data['calls'])} call(s) to {path}")
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "exported_at": datetime.now(timezone.utc).isoformat(),
             "profiler": self.profiler.name,

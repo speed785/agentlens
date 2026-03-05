@@ -1,0 +1,4 @@
+[run]
+omit =
+    agentlens/__main__.py
+    */agentlens/__main__.py

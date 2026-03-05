@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from setuptools import setup, find_packages
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+root_readme = Path(__file__).resolve().parent.parent / "README.md"
+long_description = root_readme.read_text(encoding="utf-8") if root_readme.exists() else ""
 
 setup(
     name="agentlens",
@@ -33,6 +35,7 @@ setup(
         "dev": [
             "pytest>=7.0",
             "pytest-asyncio>=0.21",
+            "pytest-cov>=4.0",
             "black",
             "mypy",
             "ruff",

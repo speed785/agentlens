@@ -218,7 +218,15 @@ export class Profiler {
     const profiler = this;
     return function (this: unknown, ...args: A): R {
       const call = profiler._startCall(name, "tool", null, opts.tags);
-      const result = fn.apply(this, args);
+      let result: R;
+      try {
+        result = fn.apply(this, args);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        call.finish({ success: false, error });
+        profiler._record(call);
+        throw err;
+      }
 
       if (result instanceof Promise) {
         return result.then(
@@ -250,7 +258,15 @@ export class Profiler {
 
     return function (this: unknown, ...args: A): R {
       const call = profiler._startCall(callName, "llm", model, opts.tags);
-      const result = fn.apply(this, args);
+      let result: R;
+      try {
+        result = fn.apply(this, args);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        call.finish({ success: false, error });
+        profiler._record(call);
+        throw err;
+      }
 
       if (result instanceof Promise) {
         return result.then(

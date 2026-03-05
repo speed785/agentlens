@@ -36,7 +36,7 @@ class _ProfiledMessages:
         name = f"anthropic.messages/{model}"
 
         if stream:
-            return self._create_stream(name, model, *args, **kwargs)
+            return self._create_stream(name, *args, **kwargs)
 
         call = self._profiler._start_call(name, CallType.LLM, model=model)
         try:
@@ -51,7 +51,8 @@ class _ProfiledMessages:
         finally:
             self._profiler._record(call)
 
-    def _create_stream(self, name: str, model: str, *args: Any, **kwargs: Any) -> Any:
+    def _create_stream(self, name: str, *args: Any, **kwargs: Any) -> Any:
+        model = kwargs.get("model", "unknown")
         call = self._profiler._start_call(name, CallType.LLM, model=model)
         try:
             stream = self._inner.create(*args, **kwargs)

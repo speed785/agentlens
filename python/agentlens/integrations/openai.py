@@ -35,7 +35,7 @@ class _ProfiledChatCompletions:
         name = f"openai.chat/{model}"
 
         if stream:
-            return self._create_stream(name, model, *args, **kwargs)
+            return self._create_stream(name, *args, **kwargs)
 
         call = self._profiler._start_call(name, CallType.LLM, model=model)
         try:
@@ -50,8 +50,9 @@ class _ProfiledChatCompletions:
         finally:
             self._profiler._record(call)
 
-    def _create_stream(self, name: str, model: str, *args: Any, **kwargs: Any) -> Any:
+    def _create_stream(self, name: str, *args: Any, **kwargs: Any) -> Any:
         """Wrap a streaming response — records the call after the stream is consumed."""
+        model = kwargs.get("model", "unknown")
         call = self._profiler._start_call(name, CallType.LLM, model=model)
 
         try:
@@ -172,6 +173,7 @@ class ProfiledOpenAI:
 
 class _ProfiledChat:
     def __init__(self, inner: Any, profiler: Profiler) -> None:
+        self._inner = inner
         self.completions = _ProfiledChatCompletions(inner.completions, profiler)
 
     def __getattr__(self, item: str) -> Any:
