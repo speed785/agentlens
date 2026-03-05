@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <!-- Grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
+    </pattern>
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="40" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Big radial glow behind icon -->
+    <radialGradient id="iconGlow" cx="256" cy="320" r="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00ff88" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#00ff88" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00ff88" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Scanline effect -->
+    <pattern id="scanlines" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" fill="#00ff88" opacity="0.015"/>
+    </pattern>
+    <!-- Noise texture -->
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.04"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="overlay"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#0d0d0d"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <rect width="1280" height="640" fill="url(#scanlines)"/>
+
+  <!-- Large ambient glow -->
+  <ellipse cx="256" cy="320" rx="300" ry="280" fill="url(#iconGlow)"/>
+
+  <!-- Subtle top accent line -->
+  <rect x="0" y="0" width="1280" height="2" fill="#00ff88" opacity="0.6"/>
+  <rect x="0" y="638" width="1280" height="2" fill="#00ff88" opacity="0.15"/>
+
+  <!-- === LEFT SIDE: Icon area === -->
+
+  <!-- Circuit traces radiating from eye -->
+  <g stroke="#00ff88" stroke-width="1" fill="none" opacity="0.2">
+    <path d="M 160 240 L 120 200 L 120 160"/>
+    <path d="M 350 240 L 390 200 L 390 150"/>
+    <path d="M 160 400 L 110 440 L 110 490"/>
+    <path d="M 350 400 L 400 440 L 400 500"/>
+    <path d="M 130 320 L 80 320"/>
+    <path d="M 380 320 L 440 320"/>
+    <circle cx="120" cy="160" r="3" fill="#00ff88"/>
+    <circle cx="390" cy="150" r="3" fill="#00ff88"/>
+    <circle cx="110" cy="490" r="3" fill="#00ff88"/>
+    <circle cx="400" cy="500" r="3" fill="#00ff88"/>
+    <circle cx="80" cy="320" r="3" fill="#00ff88"/>
+    <circle cx="440" cy="320" r="3" fill="#00ff88"/>
+  </g>
+
+  <!-- Outer eye shape -->
+  <g filter="url(#glow)">
+    <path d="M 140 320 Q 256 200 372 320 Q 256 440 140 320 Z" 
+          fill="none" stroke="#00ff88" stroke-width="2.5" opacity="0.9"/>
+  </g>
+  <!-- Inner eye shape -->
+  <path d="M 175 320 Q 256 235 337 320 Q 256 405 175 320 Z" 
+        fill="none" stroke="#00ff88" stroke-width="1" opacity="0.3"/>
+
+  <!-- Iris outer ring -->
+  <circle cx="256" cy="320" r="55" fill="none" stroke="#00ff88" stroke-width="2" opacity="0.7"/>
+  <!-- Iris inner circle -->
+  <circle cx="256" cy="320" r="35" fill="#00ff88" opacity="0.12"/>
+  <circle cx="256" cy="320" r="35" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.9"/>
+  <!-- Pupil -->
+  <circle cx="256" cy="320" r="16" fill="#00ff88" opacity="0.3"/>
+  <circle cx="256" cy="320" r="8" fill="#00ff88" opacity="0.7"/>
+  <!-- Highlight -->
+  <circle cx="245" cy="308" r="5" fill="#ffffff" opacity="0.6"/>
+
+  <!-- Crosshair overlay on eye -->
+  <line x1="256" y1="275" x2="256" y2="290" stroke="#00ff88" stroke-width="0.8" opacity="0.5"/>
+  <line x1="256" y1="350" x2="256" y2="365" stroke="#00ff88" stroke-width="0.8" opacity="0.5"/>
+  <line x1="211" y1="320" x2="226" y2="320" stroke="#00ff88" stroke-width="0.8" opacity="0.5"/>
+  <line x1="286" y1="320" x2="301" y2="320" stroke="#00ff88" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Small data dots around the eye -->
+  <g fill="#00ff88" opacity="0.4">
+    <rect x="155" y="270" width="3" height="3"/>
+    <rect x="170" y="255" width="3" height="3"/>
+    <rect x="340" y="260" width="3" height="3"/>
+    <rect x="355" y="275" width="3" height="3"/>
+    <rect x="155" y="370" width="3" height="3"/>
+    <rect x="345" y="375" width="3" height="3"/>
+  </g>
+
+  <!-- === RIGHT SIDE: Text === -->
+
+  <!-- Tool name -->
+  <text x="540" y="250" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="72" font-weight="700" fill="#00ff88" letter-spacing="-2">
+    agentlens
+  </text>
+
+  <!-- Underline accent -->
+  <rect x="540" y="268" width="180" height="3" rx="1.5" fill="#00ff88" opacity="0.5"/>
+
+  <!-- Tagline -->
+  <text x="540" y="315" font-family="-apple-system, 'Segoe UI', Helvetica, sans-serif" font-size="26" fill="#cccccc" letter-spacing="0.5">
+    DevTools for AI agents
+  </text>
+
+  <!-- Stats row -->
+  <g font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="15" fill="#666666">
+    <!-- Stat 1 -->
+    <circle cx="548" cy="380" r="3" fill="#00ff88" opacity="0.6"/>
+    <text x="560" y="384">100% Coverage</text>
+    <!-- Stat 2 -->
+    <circle cx="548" cy="412" r="3" fill="#00ff88" opacity="0.6"/>
+    <text x="560" y="416">Python + TypeScript</text>
+    <!-- Stat 3 -->
+    <circle cx="548" cy="444" r="3" fill="#00ff88" opacity="0.6"/>
+    <text x="560" y="448">MIT License</text>
+  </g>
+
+  <!-- Separator line -->
+  <line x1="540" y1="490" x2="1100" y2="490" stroke="#1a1a1a" stroke-width="1"/>
+
+  <!-- Footer -->
+  <text x="540" y="530" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="14" fill="#444444" letter-spacing="2">
+    speed785.github.io
+  </text>
+
+  <!-- Corner decorations -->
+  <g stroke="#00ff88" stroke-width="1" opacity="0.2">
+    <path d="M 20 20 L 20 50"/>
+    <path d="M 20 20 L 50 20"/>
+    <path d="M 1260 20 L 1260 50"/>
+    <path d="M 1260 20 L 1230 20"/>
+    <path d="M 20 620 L 20 590"/>
+    <path d="M 20 620 L 50 620"/>
+    <path d="M 1260 620 L 1260 590"/>
+    <path d="M 1260 620 L 1230 620"/>
+  </g>
+
+  <!-- Noise overlay -->
+  <rect width="1280" height="640" filter="url(#noise)" opacity="0.5"/>
+</svg>
