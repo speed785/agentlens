@@ -12,6 +12,14 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 import threading
 
+from .observability import (
+    AgentLensLogger,
+    ObservabilityConfig,
+    OTelSpanContext,
+    get_default_observability,
+    get_metrics_collector,
+)
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -134,12 +142,20 @@ class Profiler:
 
     _local = threading.local()
 
-    def __init__(self, name: str = "default", tags: Optional[List[str]] = None):
+    def __init__(
+        self,
+        name: str = "default",
+        tags: Optional[List[str]] = None,
+        observability: Optional[ObservabilityConfig] = None,
+    ):
         self.name = name
         self.tags = tags or []
         self._calls: List[ProfiledCall] = []
         self._lock = threading.Lock()
         self._active_chain: Optional[str] = None
+        self._observability = observability or get_default_observability()
+        self._logger = AgentLensLogger(self._observability, logger_name=f"agentlens.{self.name}")
+        self._otel = OTelSpanContext(self._observability)
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -148,6 +164,39 @@ class Profiler:
     def _record(self, call: ProfiledCall) -> None:
         with self._lock:
             self._calls.append(call)
+
+        if self._observability.enable_metrics and call.latency_ms is not None:
+            get_metrics_collector().record(
+                success=call.success,
+                latency_ms=call.latency_ms,
+                token_usage=call.token_usage.to_dict(),
+            )
+
+        payload: Dict[str, Any] = {
+            "call_id": call.id,
+            "name": call.name,
+            "call_type": call.call_type.value,
+            "model": call.model,
+            "parent_id": call.parent_id,
+            "success": call.success,
+            "latency_ms": call.latency_ms,
+            "error_type": call.error_type,
+        }
+
+        if call.call_type == CallType.CHAIN:
+            self._logger.chain_completed(**payload)
+        elif call.success:
+            self._logger.call_completed(**payload)
+        else:
+            self._logger.call_failed(**payload)
+
+        if self._observability.debug_mode:
+            self._logger.debug_trace(
+                event_scope="record",
+                profiler=self.name,
+                call=call.to_dict(),
+                token_breakdown=call.token_usage.to_dict(),
+            )
 
     def _start_call(
         self,
@@ -164,6 +213,20 @@ class Profiler:
             tags=(self.tags + (tags or [])),
             parent_id=parent_id or self._active_chain,
         )
+
+        payload: Dict[str, Any] = {
+            "call_id": call.id,
+            "name": call.name,
+            "call_type": call.call_type.value,
+            "model": call.model,
+            "parent_id": call.parent_id,
+        }
+
+        if call_type == CallType.CHAIN:
+            self._logger.chain_started(**payload)
+        else:
+            self._logger.call_started(**payload)
+
         return call
 
     # ------------------------------------------------------------------ #

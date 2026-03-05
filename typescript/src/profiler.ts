@@ -4,6 +4,12 @@
  */
 
 import { randomUUID } from "crypto";
+import {
+  AgentLensLogger,
+  defaultObservabilityConfig,
+  MetricsCollector,
+  ObservabilityConfig,
+} from "./observability";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -175,10 +181,16 @@ export class Profiler {
   readonly tags: string[];
   private _calls: ProfiledCall[] = [];
   private _activeChain: string | null = null;
+  private readonly _logger: AgentLensLogger;
+  private readonly _metrics: MetricsCollector;
+  private readonly _observability: ObservabilityConfig;
 
-  constructor(name = "default", tags: string[] = []) {
+  constructor(name = "default", tags: string[] = [], observability: Partial<ObservabilityConfig> = {}) {
     this.name = name;
     this.tags = tags;
+    this._observability = { ...defaultObservabilityConfig, ...observability };
+    this._logger = new AgentLensLogger(this._observability);
+    this._metrics = new MetricsCollector();
   }
 
   // ── Internal ──────────────────────────────────────────────
@@ -189,17 +201,67 @@ export class Profiler {
     model?: string | null,
     tags?: string[],
   ): ProfiledCall {
-    return new ProfiledCall({
+    const call = new ProfiledCall({
       name,
       callType,
       model,
       parentId: this._activeChain,
       tags: [...this.tags, ...(tags ?? [])],
     });
+
+    const payload = {
+      callId: call.id,
+      name: call.name,
+      callType: call.callType,
+      model: call.model,
+      parentId: call.parentId,
+    };
+
+    if (callType === "chain") {
+      this._logger.chainStarted(payload);
+    } else {
+      this._logger.callStarted(payload);
+    }
+
+    return call;
   }
 
   private _record(call: ProfiledCall): void {
     this._calls.push(call);
+
+    if (this._observability.enableMetrics && call.latencyMs !== null) {
+      this._metrics.record({
+        success: call.success,
+        latencyMs: call.latencyMs,
+        tokenUsage: call.tokenUsage,
+      });
+    }
+
+    const payload = {
+      callId: call.id,
+      name: call.name,
+      callType: call.callType,
+      model: call.model,
+      parentId: call.parentId,
+      success: call.success,
+      latencyMs: call.latencyMs,
+      errorType: call.errorType,
+    };
+
+    if (call.callType === "chain") {
+      this._logger.chainCompleted(payload);
+    } else if (call.success) {
+      this._logger.callCompleted(payload);
+    } else {
+      this._logger.callFailed(payload);
+    }
+
+    this._logger.debugTrace({
+      eventScope: "record",
+      profiler: this.name,
+      call: call.toJSON(),
+      tokenBreakdown: call.tokenUsage,
+    });
   }
 
   // ── Decorator-style wrappers ──────────────────────────────
