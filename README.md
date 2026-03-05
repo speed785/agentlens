@@ -3,10 +3,13 @@
   <h1>agentlens</h1>
   <p><strong>DevTools for AI agents — profile every call, find every bottleneck</strong></p>
 
-  [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](python/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)](typescript/)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-  [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](python/requirements.txt)
+  [![CI](https://github.com/speed785/agentlens/actions/workflows/ci.yml/badge.svg)](https://github.com/speed785/agentlens/actions/workflows/ci.yml)
+  [![Coverage](https://codecov.io/gh/speed785/agentlens/branch/main/graph/badge.svg)](https://codecov.io/gh/speed785/agentlens)
+  [![PyPI](https://img.shields.io/pypi/v/agentlens)](https://pypi.org/project/agentlens/)
+  [![npm](https://img.shields.io/npm/v/agentlens)](https://www.npmjs.com/package/agentlens)
+  [![Python](https://img.shields.io/badge/python-3.9+-blue)](https://python.org)
+  [![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue)](https://typescriptlang.org)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
   [Website](https://speed785.github.io/agentlens) · [GitHub](https://github.com/speed785/agentlens) · [Issues](https://github.com/speed785/agentlens/issues)
 </div>
