@@ -15,19 +15,27 @@
   "keywords": [
     "ai",
     "agent",
-    "observability",
-    "profiling",
     "llm",
+    "profiler",
+    "observability",
     "openai",
     "anthropic",
+    "monitoring",
     "tracing",
-    "devtools"
+    "opentelemetry",
+    "devtools",
+    "debugging",
+    "performance"
   ],
   "author": "AgentLens Contributors",
   "license": "MIT",
+  "homepage": "https://github.com/speed785/agentlens",
+  "bugs": {
+    "url": "https://github.com/speed785/agentlens/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/speed785/agentlens"
+    "url": "git+https://github.com/speed785/agentlens.git"
   },
   "peerDependencies": {
     "openai": ">=4.0.0",
