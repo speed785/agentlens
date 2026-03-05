@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentLens — DevTools for AI Agents</title>
+  <meta name="description" content="Drop-in observability for AI agent pipelines. Profile every call, find every bottleneck.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a; --bg-card: #0f0f0f; --bg-elevated: #111111;
+      --border: #1a1a1a; --border-hover: #2a2a2a;
+      --text: #e0e0e0; --text-dim: #666666; --text-muted: #444444;
+      --accent: #00ff88; --accent-dim: rgba(0,255,136,0.08);
+      --cyan: #00d4ff;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-body: 'IBM Plex Sans', sans-serif;
+      --ease: cubic-bezier(0.16,1,0.3,1);
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--text); line-height:1.6; }
+    a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+    code, pre { font-family:var(--font-mono); }
+    .container { max-width:860px; margin:0 auto; padding:0 2rem; }
+
+    /* Nav */
+    .nav { position:sticky; top:0; z-index:100; padding:0 2rem; backdrop-filter:blur(12px); background:rgba(10,10,10,0.85); border-bottom:1px solid var(--border); }
+    .nav-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:56px; }
+    .nav-brand { font-family:var(--font-mono); font-size:0.95rem; font-weight:600; color:var(--text); }
+    .nav-brand .accent { color:var(--accent); }
+    .nav-links { display:flex; gap:1.5rem; }
+    .nav-links a { font-family:var(--font-mono); font-size:0.78rem; color:var(--text-dim); }
+    .nav-links a:hover { color:var(--accent); text-decoration:none; }
+
+    /* Hero */
+    .hero { padding:5rem 0 3rem; border-bottom:1px solid var(--border); }
+    .hero-icon { width:80px; height:80px; border-radius:14px; margin-bottom:1.5rem; }
+    .hero h1 { font-family:var(--font-mono); font-size:2.2rem; font-weight:700; letter-spacing:-0.03em; margin-bottom:0.5rem; }
+    .hero .tagline { font-size:1.1rem; color:var(--text-dim); margin-bottom:2rem; }
+    .hero-badges { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .badge { font-family:var(--font-mono); font-size:0.72rem; padding:0.3rem 0.8rem; border:1px solid var(--border); border-radius:100px; color:var(--text-dim); }
+
+    /* Install */
+    .install { padding:3rem 0; border-bottom:1px solid var(--border); }
+    .install h2 { font-family:var(--font-mono); font-size:1.3rem; margin-bottom:1.5rem; color:var(--accent); }
+    .install-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+    @media(max-width:600px) { .install-grid { grid-template-columns:1fr; } }
+    .install-block h3 { font-family:var(--font-mono); font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem; }
+    pre { background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; overflow-x:auto; font-size:0.82rem; line-height:1.7; }
+    pre .prompt { color:var(--accent); user-select:none; }
+    pre .cmd { color:var(--cyan); }
+    pre .comment { color:var(--text-muted); }
+
+    /* Sections */
+    .doc-section { padding:3rem 0; border-bottom:1px solid var(--border); }
+    .doc-section:last-of-type { border-bottom:none; }
+    .doc-section h2 { font-family:var(--font-mono); font-size:1.3rem; margin-bottom:1.5rem; color:var(--accent); }
+    .doc-section h3 { font-family:var(--font-mono); font-size:1rem; margin:1.5rem 0 0.75rem; color:var(--text); }
+    .doc-section p { color:var(--text-dim); margin-bottom:1rem; font-size:0.95rem; }
+    .doc-section ul { margin-bottom:1rem; padding-left:0; list-style:none; }
+    .doc-section li { font-size:0.9rem; color:var(--text-dim); padding:0.25rem 0 0.25rem 1.2rem; position:relative; }
+    .doc-section li::before { content:'>'; position:absolute; left:0; font-family:var(--font-mono); color:var(--accent); font-size:0.8rem; }
+
+    /* API Table */
+    .api-table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.85rem; }
+    .api-table th { text-align:left; font-family:var(--font-mono); font-weight:600; padding:0.6rem 1rem; border-bottom:2px solid var(--border); color:var(--text); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; }
+    .api-table td { padding:0.6rem 1rem; border-bottom:1px solid var(--border); vertical-align:top; }
+    .api-table td:first-child { font-family:var(--font-mono); color:var(--cyan); white-space:nowrap; font-size:0.82rem; }
+    .api-table td:last-child { color:var(--text-dim); }
+    .api-table tr:hover { background:rgba(255,255,255,0.02); }
+
+    /* Terminal block */
+    .terminal { background:var(--bg-elevated); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin:1.5rem 0; }
+    .terminal-bar { display:flex; gap:6px; padding:10px 14px; background:#161616; border-bottom:1px solid var(--border); }
+    .terminal-dot { width:10px; height:10px; border-radius:50%; }
+    .terminal-dot.r { background:#ff5f57; } .terminal-dot.y { background:#febc2e; } .terminal-dot.g { background:#28c840; }
+    .terminal pre { border:none; border-radius:0; margin:0; }
+
+    /* Footer */
+    .footer { padding:3rem 0; text-align:center; border-top:1px solid var(--border); }
+    .footer p { font-size:0.82rem; color:var(--text-muted); }
+    .footer a { color:var(--accent); }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="https://speed785.github.io" class="nav-brand"><span class="accent">[</span>speed785<span class="accent">]</span> / agentlens</a>
+      <div class="nav-links">
+        <a href="#install">Install</a>
+        <a href="#usage">Usage</a>
+        <a href="#api">API</a>
+        <a href="https://github.com/speed785/agentlens">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <svg class="hero-icon" viewBox="0 0 512 512" width="80" height="80">
+        <defs><radialGradient id="a-bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#141414"/><stop offset="100%" stop-color="#0a0a0a"/></radialGradient><radialGradient id="a-iris" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#00ff88"/><stop offset="60%" stop-color="#00cc66"/><stop offset="100%" stop-color="#009944"/></radialGradient><filter id="a-g"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <rect width="512" height="512" rx="64" fill="url(#a-bg)"/>
+        <g filter="url(#a-g)"><path d="M80 256 Q168 160 256 160 Q344 160 432 256 Q344 352 256 352 Q168 352 80 256Z" fill="none" stroke="#00ff88" stroke-width="3" opacity="0.9"/></g>
+        <path d="M80 256 Q168 160 256 160 Q344 160 432 256 Q344 352 256 352 Q168 352 80 256Z" fill="#0a0a0a" opacity="0.8"/>
+        <circle cx="256" cy="256" r="60" fill="url(#a-iris)" opacity="0.9" filter="url(#a-g)"/>
+        <circle cx="256" cy="256" r="24" fill="#0a0a0a"/>
+        <circle cx="240" cy="240" r="8" fill="#fff" opacity="0.6"/>
+      </svg>
+      <h1>AgentLens</h1>
+      <p class="tagline">DevTools for AI agents &mdash; profile every call, find every bottleneck</p>
+      <div class="hero-badges">
+        <span class="badge">Python 3.9+</span>
+        <span class="badge">TypeScript 5.x</span>
+        <span class="badge">MIT License</span>
+        <span class="badge">Zero Dependencies</span>
+      </div>
+    </section>
+
+    <section class="doc-section">
+      <p>When your agent breaks or runs slowly, good luck figuring out <em>which</em> tool call failed, <em>which</em> LLM call consumed most of your tokens, or <em>where</em> latency piled up. AgentLens gives you per-call latency, token accounting, success/failure tracking, call chains, and JSON trace export &mdash; with zero required dependencies.</p>
+      <div class="terminal">
+        <div class="terminal-bar"><span class="terminal-dot r"></span><span class="terminal-dot y"></span><span class="terminal-dot g"></span></div>
+        <pre><span class="prompt">$</span> <span class="cmd">agentlens</span> view trace.json
+  Call Trace &mdash; research-agent
+  #  Name                  Type   Model    Latency   Tokens  Status
+  1  research_pipeline     chain  &mdash;       1243 ms   &mdash;       &#10003; ok
+  2  plan_research         llm    gpt-4o   612 ms    487     &#10003; ok
+  3  web_search            tool   &mdash;       87 ms     &mdash;       &#10003; ok
+  4  fetch_page            tool   &mdash;       134 ms    &mdash;       &#10003; ok
+  5  fetch_page            tool   &mdash;       12 ms     &mdash;       &#10007; error
+  6  summarize_text        tool   &mdash;       18 ms     &mdash;       &#10003; ok</pre>
+      </div>
+    </section>
+
+    <section class="install" id="install">
+      <h2># Install</h2>
+      <div class="install-grid">
+        <div class="install-block">
+          <h3>Python</h3>
+          <pre><span class="prompt">$</span> pip install agentlens
+<span class="comment"># With SDK integrations:</span>
+<span class="prompt">$</span> pip install agentlens[openai]
+<span class="prompt">$</span> pip install agentlens[anthropic]
+<span class="prompt">$</span> pip install agentlens[all]</pre>
+        </div>
+        <div class="install-block">
+          <h3>TypeScript / Node.js</h3>
+          <pre><span class="prompt">$</span> npm install agentlens
+<span class="comment"># or</span>
+<span class="prompt">$</span> yarn add agentlens</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="usage">
+      <h2># Quick Start</h2>
+
+      <h3>Python</h3>
+      <pre><span class="comment"># Decorate tool functions and LLM calls</span>
+from agentlens import Profiler
+from agentlens.reporter import Reporter
+
+profiler = Profiler("my-agent")
+reporter = Reporter(profiler)
+
+@profiler.tool("web_search")
+def web_search(query: str) -> list:
+    ...
+
+@profiler.llm(model="gpt-4o")
+def call_gpt(messages: list):
+    return openai_client.chat.completions.create(
+        model="gpt-4o", messages=messages
+    )
+
+<span class="comment"># Group calls into named chains</span>
+with profiler.chain("research_pipeline"):
+    results = web_search("AI agent frameworks")
+    response = call_gpt([{"role": "user", "content": str(results)}])
+
+reporter.print_table()
+reporter.print_summary()
+reporter.export_json("trace.json")</pre>
+
+      <h3>Drop-in OpenAI Wrapper</h3>
+      <pre>from agentlens.integrations.openai import ProfiledOpenAI
+
+profiler = Profiler("gpt-agent")
+client = ProfiledOpenAI(openai.OpenAI(api_key="..."), profiler=profiler)
+
+<span class="comment"># Use exactly like a normal OpenAI client &mdash; profiling is automatic</span>
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}],
+)</pre>
+
+      <h3>TypeScript</h3>
+      <pre>import { Profiler, Reporter } from "agentlens";
+
+const profiler = new Profiler("my-agent");
+const reporter = new Reporter(profiler);
+
+const searchWeb = profiler.wrapTool("search_web", async (query: string) => {
+  const results = await fetch(`https://api.search.com?q=${query}`);
+  return results.json();
+});
+
+const callGPT = profiler.wrapLLM("gpt-4o", async (messages) => {
+  return openai.chat.completions.create({ model: "gpt-4o", messages });
+}, { name: "plan_step" });
+
+await profiler.runChain("research_pipeline", async () => {
+  const results = await searchWeb("AI agent frameworks");
+  return await callGPT([{ role: "user", content: JSON.stringify(results) }]);
+});
+
+reporter.printTable();
+reporter.exportJSON("trace.json");</pre>
+    </section>
+
+    <section class="doc-section" id="api">
+      <h2># API Reference</h2>
+
+      <h3>Profiler</h3>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Profiler(name, tags?)</td><td>Create a profiler instance</td></tr>
+          <tr><td>.tool(name?, tags?)</td><td>Decorator for tool functions</td></tr>
+          <tr><td>.llm(model?, name?, tags?)</td><td>Decorator for LLM calls</td></tr>
+          <tr><td>.chain(name)</td><td>Context manager to group calls</td></tr>
+          <tr><td>.start_call(name, call_type, model?)</td><td>Manual: start a call</td></tr>
+          <tr><td>.end_call(call, success, error?, token_usage?)</td><td>Manual: finish a call</td></tr>
+          <tr><td>.calls</td><td>List of all ProfiledCall objects</td></tr>
+          <tr><td>.summary()</td><td>Dict of aggregate stats</td></tr>
+          <tr><td>.get_calls(call_type?, success_only?, failed_only?)</td><td>Filtered call list</td></tr>
+          <tr><td>.clear()</td><td>Reset recorded calls</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Reporter</h3>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Reporter(profiler)</td><td>Create a reporter</td></tr>
+          <tr><td>.print_table()</td><td>Print a detailed call table</td></tr>
+          <tr><td>.print_summary()</td><td>Print aggregate statistics</td></tr>
+          <tr><td>.print_timeline()</td><td>Print ASCII latency timeline</td></tr>
+          <tr><td>.export_json(path)</td><td>Export full trace as JSON</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="doc-section">
+      <h2># Key Features</h2>
+      <ul>
+        <li>Per-call latency &mdash; know exactly which step is slow</li>
+        <li>Token accounting &mdash; prompt vs. completion tokens per LLM call</li>
+        <li>Success/failure tracking &mdash; error types surfaced immediately</li>
+        <li>Call chains &mdash; group related calls into named pipelines</li>
+        <li>Drop-in SDK wrappers &mdash; ProfiledOpenAI and ProfiledAnthropic</li>
+        <li>JSON export &mdash; pipe traces to any logging system</li>
+        <li>CLI viewer &mdash; replay traces with <code>agentlens view</code></li>
+      </ul>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p><a href="https://speed785.github.io">speed785.github.io</a> &middot; <a href="https://github.com/speed785/agentlens">GitHub</a> &middot; MIT License</p>
+    </div>
+  </footer>
+
+</body>
+</html>
