@@ -8,6 +8,7 @@ from agentlens.profiler import (  # pyright: ignore[reportImplicitRelativeImport
     CallType,
     Profiler,
     TokenUsage,
+    get_default_profiler,
     profile_llm,
     profile_tool,
 )
@@ -66,6 +67,23 @@ def test_llm_decorator_token_extraction_openai_and_anthropic() -> None:
     assert second.token_usage.total_tokens == 10
 
 
+def test_token_usage_none_and_profiled_call_metadata_update() -> None:
+    assert TokenUsage.from_openai_usage(None).to_dict() == {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
+    assert TokenUsage.from_anthropic_usage(None).to_dict() == {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    call = Profiler("meta").start_call("c")
+    call.finish(metadata={"a": 1})
+    assert call.metadata == {"a": 1}
+
+
 def test_llm_decorator_custom_token_extractor() -> None:
     profiler = Profiler("custom")
 
@@ -95,6 +113,51 @@ async def test_async_tool_and_llm_wrappers() -> None:
     calls = profiler.calls
     assert [c.name for c in calls] == ["atool", "allm"]
     assert calls[1].token_usage.total_tokens == 3
+
+
+@pytest.mark.asyncio
+async def test_async_wrapper_error_paths_and_token_inference_branches() -> None:
+    profiler = Profiler("async-branches")
+
+    @profiler.tool("atool-boom")
+    async def atool_boom() -> None:
+        raise RuntimeError("tool fail")
+
+    @profiler.llm(name="sync-llm-boom")
+    def sync_llm_boom() -> None:
+        raise ValueError("sync fail")
+
+    @profiler.llm(name="allm-custom", token_extractor=lambda res: TokenUsage(total_tokens=res["n"]))
+    async def allm_custom() -> dict[str, int]:
+        return {"n": 7}
+
+    @profiler.llm(name="allm-anthropic")
+    async def allm_anthropic() -> SimpleNamespace:
+        return SimpleNamespace(usage=SimpleNamespace(input_tokens=4, output_tokens=5))
+
+    @profiler.llm(name="allm-boom")
+    async def allm_boom() -> None:
+        raise RuntimeError("llm fail")
+
+    with pytest.raises(RuntimeError, match="tool fail"):
+        await atool_boom()
+    with pytest.raises(ValueError, match="sync fail"):
+        sync_llm_boom()
+
+    await allm_custom()
+    await allm_anthropic()
+
+    with pytest.raises(RuntimeError, match="llm fail"):
+        await allm_boom()
+
+    custom = next(c for c in profiler.calls if c.name == "allm-custom")
+    anthropic = next(c for c in profiler.calls if c.name == "allm-anthropic")
+    assert custom.token_usage.total_tokens == 7
+    assert anthropic.token_usage.total_tokens == 9
+
+
+def test_summary_empty_profiler() -> None:
+    assert Profiler("empty").summary() == {"total_calls": 0}
 
 
 def test_manual_instrumentation_and_filters() -> None:
@@ -155,3 +218,15 @@ def test_module_level_decorators_record_calls() -> None:
     assert gtool() == "ok"
     gllm()
     assert global_before >= 0
+
+
+@pytest.mark.asyncio
+async def test_async_chain_methods_and_default_profiler_accessor() -> None:
+    profiler = Profiler("achain")
+
+    async with profiler.chain("async-chain"):
+        pass
+
+    chain_call = next(c for c in profiler.calls if c.name == "async-chain")
+    assert chain_call.success is True
+    assert get_default_profiler() is not None

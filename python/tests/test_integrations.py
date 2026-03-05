@@ -71,6 +71,55 @@ def test_profiled_openai_stream_records_after_iteration() -> None:
     assert profiler.calls[0].success is True
 
 
+@pytest.mark.asyncio
+async def test_profiled_openai_covers_error_and_passthrough_paths() -> None:
+    profiler = Profiler("openai-errors")
+
+    class BrokenStream:
+        sentinel = "stream-sentinel"
+
+        def __iter__(self):
+            raise RuntimeError("stream boom")
+
+    chat = SimpleNamespace(
+        completions=SimpleNamespace(
+            create=Mock(side_effect=[RuntimeError("chat boom"), BrokenStream(), RuntimeError("stream create boom")]),
+            acreate=AsyncMock(side_effect=RuntimeError("achat boom")),
+        )
+    )
+    completions = SimpleNamespace(create=Mock(side_effect=[SimpleNamespace(usage=None), RuntimeError("completion boom")]))
+    embeddings = SimpleNamespace(create=Mock(side_effect=RuntimeError("embedding boom")))
+    client = SimpleNamespace(chat=chat, completions=completions, embeddings=embeddings)
+    wrapped = ProfiledOpenAI(client, profiler=profiler)
+
+    assert wrapped.profiler is profiler
+
+    with pytest.raises(RuntimeError, match="chat boom"):
+        wrapped.chat.completions.create(model="gpt-4o", messages=[])
+
+    stream = wrapped.chat.completions.create(model="gpt-4o", stream=True, messages=[])
+    assert stream.sentinel == "stream-sentinel"
+    with pytest.raises(RuntimeError, match="stream boom"):
+        list(stream)
+
+    with pytest.raises(RuntimeError, match="stream create boom"):
+        wrapped.chat.completions.create(model="gpt-4o", stream=True, messages=[])
+
+    with pytest.raises(RuntimeError, match="achat boom"):
+        await wrapped.chat.completions.acreate(model="gpt-4o", messages=[])
+
+    wrapped.completions.create(model="gpt-3.5-turbo-instruct", prompt="ok")
+    with pytest.raises(RuntimeError, match="completion boom"):
+        wrapped.completions.create(model="gpt-3.5-turbo-instruct", prompt="bad")
+
+    with pytest.raises(RuntimeError, match="embedding boom"):
+        wrapped.embeddings.create(model="text-embedding-3-small", input="x")
+
+    assert any(c.name == "openai.completion/gpt-3.5-turbo-instruct" and c.success for c in profiler.calls)
+    assert any(c.name == "openai.completion/gpt-3.5-turbo-instruct" and not c.success for c in profiler.calls)
+    assert any(c.name == "openai.embeddings/text-embedding-3-small" and not c.success for c in profiler.calls)
+
+
 def test_profiled_anthropic_records_calls_and_stream_context() -> None:
     profiler = Profiler("anthropic")
 
@@ -129,3 +178,61 @@ async def test_async_create_methods_are_profiled() -> None:
     totals = [c.token_usage.total_tokens for c in profiler.calls]
     assert 2 in totals
     assert 5 in totals
+
+
+def test_profiled_anthropic_covers_error_and_passthrough_paths() -> None:
+    profiler = Profiler("anthropic-errors")
+
+    class BrokenEventStream:
+        marker = "anthropic-stream"
+
+        def __iter__(self):
+            raise RuntimeError("event boom")
+
+    create = Mock(side_effect=[RuntimeError("create boom"), BrokenEventStream(), RuntimeError("create stream boom")])
+    stream = Mock(side_effect=RuntimeError("ctx boom"))
+    messages = SimpleNamespace(create=create, stream=stream, acreate=AsyncMock(side_effect=RuntimeError("acreate boom")))
+    wrapped = ProfiledAnthropic(SimpleNamespace(messages=messages), profiler=profiler)
+
+    assert wrapped.profiler is profiler
+
+    with pytest.raises(RuntimeError, match="create boom"):
+        wrapped.messages.create(model="claude", max_tokens=1, messages=[])
+
+    wrapped_stream = wrapped.messages.create(model="claude", max_tokens=1, stream=True, messages=[])
+    assert wrapped_stream.marker == "anthropic-stream"
+    with pytest.raises(RuntimeError, match="event boom"):
+        list(wrapped_stream)
+
+    with pytest.raises(RuntimeError, match="create stream boom"):
+        wrapped.messages.create(model="claude", max_tokens=1, stream=True, messages=[])
+
+    with pytest.raises(RuntimeError, match="ctx boom"):
+        wrapped.messages.stream(model="claude", max_tokens=1, messages=[])
+
+    assert any(c.name.startswith("anthropic.messages/") and not c.success for c in profiler.calls)
+
+
+@pytest.mark.asyncio
+async def test_profiled_anthropic_async_context_and_errors() -> None:
+    profiler = Profiler("anthropic-async")
+
+    class AsyncCtx:
+        async def __aenter__(self):
+            return iter([{"event": 1}])
+
+        async def __aexit__(self, *_args):
+            return False
+
+    messages = SimpleNamespace(
+        create=Mock(return_value=SimpleNamespace(usage=None)),
+        stream=Mock(return_value=AsyncCtx()),
+        acreate=AsyncMock(side_effect=RuntimeError("acreate boom")),
+    )
+    wrapped = ProfiledAnthropic(SimpleNamespace(messages=messages), profiler=profiler)
+
+    async with wrapped.messages.stream(model="claude", max_tokens=1, messages=[]) as wrapped_stream:
+        assert list(wrapped_stream) == [{"event": 1}]
+
+    with pytest.raises(RuntimeError, match="acreate boom"):
+        await wrapped.messages.acreate(model="claude", max_tokens=1, messages=[])

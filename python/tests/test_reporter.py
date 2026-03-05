@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import io
 import json
+from datetime import datetime, timezone
+from types import SimpleNamespace
+from typing import Any, cast
 
 from agentlens.profiler import Profiler, TokenUsage  # pyright: ignore[reportImplicitRelativeImport]
-from agentlens.reporter import Reporter  # pyright: ignore[reportImplicitRelativeImport]
+from agentlens.reporter import Reporter, _Colour, _supports_color  # pyright: ignore[reportImplicitRelativeImport]
 
 
 def _build_profiled_data() -> Profiler:
@@ -71,3 +74,67 @@ def test_print_table_can_hide_errors() -> None:
 
     assert "tool-step" not in text
     assert "1 call(s) recorded" in text
+
+
+def test_colour_support_and_wrapping_behaviour() -> None:
+    assert _supports_color(cast(Any, SimpleNamespace(isatty=lambda: True))) is True
+    assert _supports_color(cast(Any, SimpleNamespace())) is False
+
+    enabled = _Colour(enabled=True)
+    disabled = _Colour(enabled=False)
+    assert "\033[32m" in enabled.green("ok")
+    assert disabled.green("ok") == "ok"
+
+
+def test_table_truncation_and_timeline_edge_cases() -> None:
+    profiler = Profiler("edges")
+    reporter = Reporter(profiler, color=False)
+
+    empty_timeline = io.StringIO()
+    reporter.print_timeline(file=empty_timeline)
+    assert "No calls recorded" in empty_timeline.getvalue()
+
+    unfinished = profiler.start_call("x" * 80, call_type="tool")
+    profiler.end_call(unfinished, success=True)
+
+    table_out = io.StringIO()
+    reporter.print_table(file=table_out)
+    assert "…" in table_out.getvalue()
+
+    no_start = SimpleNamespace(
+        started_at=None,
+        ended_at=datetime.now(timezone.utc),
+        latency_ms=1.0,
+        success=True,
+        call_type=SimpleNamespace(value="tool"),
+        name="nostart",
+        token_usage=TokenUsage(),
+        error_type=None,
+        model=None,
+    )
+    timeline_no_start = io.StringIO()
+    reporter.profiler = cast(
+        Profiler,
+        cast(object, SimpleNamespace(name="mock", calls=[no_start], summary=lambda: {}, get_calls=lambda call_type=None: [])),
+    )
+    reporter.print_timeline(file=timeline_no_start)
+    assert timeline_no_start.getvalue() == ""
+
+    missing_end = SimpleNamespace(
+        started_at=unfinished.started_at,
+        ended_at=None,
+        latency_ms=None,
+        success=True,
+        call_type=SimpleNamespace(value="tool"),
+        name="missing-end",
+        token_usage=TokenUsage(),
+        error_type=None,
+        model=None,
+    )
+    timeline_missing_end = io.StringIO()
+    reporter.profiler = cast(
+        Profiler,
+        cast(object, SimpleNamespace(name="mock2", calls=[missing_end], summary=lambda: {}, get_calls=lambda call_type=None: [])),
+    )
+    reporter.print_timeline(file=timeline_missing_end)
+    assert "Timeline" in timeline_missing_end.getvalue()

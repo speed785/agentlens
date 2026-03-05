@@ -8,6 +8,8 @@ from agentlens.observability import (  # pyright: ignore[reportImplicitRelativeI
     MetricsCollector,
     OTelSpanContext,
     ObservabilityConfig,
+    get_default_observability,
+    set_default_observability,
 )
 from agentlens.profiler import Profiler  # pyright: ignore[reportImplicitRelativeImport]
 
@@ -82,3 +84,39 @@ def test_logger_writes_json(capsys) -> None:
     payload = json.loads(capsys.readouterr().err.strip())
     assert payload["event"] == "call_started"
     assert payload["name"] == "x"
+
+
+def test_otel_context_uses_imported_tracer(monkeypatch) -> None:
+    events: list[tuple[str, str]] = []
+
+    class DummySpan:
+        def __enter__(self):
+            events.append(("enter", "ok"))
+
+        def __exit__(self, *_args):
+            events.append(("exit", "ok"))
+
+    class DummyTracer:
+        def start_as_current_span(self, name: str):
+            events.append(("start", name))
+            return DummySpan()
+
+    class DummyTraceModule:
+        @staticmethod
+        def get_tracer(_name: str):
+            return DummyTracer()
+
+    monkeypatch.setattr("agentlens.observability.importlib.import_module", lambda _mod: DummyTraceModule())
+    ctx = OTelSpanContext(ObservabilityConfig(enable_otel=True))
+    with ctx.span("real-span"):
+        events.append(("body", "ok"))
+
+    assert ("start", "real-span") in events
+    assert ("enter", "ok") in events
+    assert ("exit", "ok") in events
+
+
+def test_set_default_observability_replaces_global_default() -> None:
+    config = ObservabilityConfig(log_level="WARNING", enable_metrics=False)
+    set_default_observability(config)
+    assert get_default_observability() is config
