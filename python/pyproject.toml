@@ -73,7 +73,7 @@ asyncio_mode = "auto"
 omit = ["agentlens/__main__.py", "*/agentlens/__main__.py"]
 
 [tool.ruff]
-line-length = 100
+line-length = 140
 target-version = "py39"
 
 [tool.ruff.lint]
