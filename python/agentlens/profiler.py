@@ -5,12 +5,12 @@ Core profiler: decorators and wrappers for instrumenting LLM calls and tool call
 from __future__ import annotations
 
 import functools
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
-import threading
 
 from .observability import (
     AgentLensLogger,

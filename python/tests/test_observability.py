@@ -6,8 +6,8 @@ from agentlens.metrics import export_prometheus, get_metrics, reset_metrics  # p
 from agentlens.observability import (  # pyright: ignore[reportImplicitRelativeImport]
     AgentLensLogger,
     MetricsCollector,
-    OTelSpanContext,
     ObservabilityConfig,
+    OTelSpanContext,
     get_default_observability,
     set_default_observability,
 )

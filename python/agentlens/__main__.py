@@ -9,7 +9,7 @@ import argparse
 import json
 import sys
 
-from .profiler import Profiler, ProfiledCall, CallType, TokenUsage
+from .profiler import CallType, ProfiledCall, Profiler, TokenUsage
 from .reporter import Reporter
 
 
