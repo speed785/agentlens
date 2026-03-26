@@ -50,7 +50,7 @@
     "@types/node": "^25.5.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.3.0"
+    "typescript": "^6.0.2"
   },
   "jest": {
     "preset": "ts-jest",
